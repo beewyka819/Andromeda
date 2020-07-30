@@ -1,0 +1,10 @@
+[package]
+name = "sandbox"
+version = "0.1.0"
+authors = ["Patrick Sullivan <psullivang7@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+hazel_rs = { version = "0.1.0", path = "../hazel_rs" }
+log = "0.4.11"
+env_logger = "0.7.1"
