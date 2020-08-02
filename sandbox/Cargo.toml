@@ -8,3 +8,4 @@ edition = "2018"
 hazel_rs = { version = "0.1.0", path = "../hazel_rs" }
 log = "0.4.11"
 env_logger = "0.7.1"
+winit = "0.22.2"
