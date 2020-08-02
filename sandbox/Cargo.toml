@@ -5,7 +5,7 @@ authors = ["Patrick Sullivan <psullivang7@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-hazel_rs = { version = "0.1.0", path = "../hazel_rs" }
+andromeda = { version = "0.1.0", path = "../andromeda" }
 log = "0.4.11"
 env_logger = "0.7.1"
 winit = "0.22.2"

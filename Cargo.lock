@@ -40,6 +40,15 @@ version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "andromeda"
+version = "0.1.0"
+dependencies = [
+ "failure 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winit 0.22.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "approx"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -260,15 +269,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "gimli"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "hazel_rs"
-version = "0.1.0"
-dependencies = [
- "failure 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "winit 0.22.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "hermit-abi"
@@ -676,8 +676,8 @@ dependencies = [
 name = "sandbox"
 version = "0.1.0"
 dependencies = [
+ "andromeda 0.1.0",
  "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "hazel_rs 0.1.0",
  "log 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "winit 0.22.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

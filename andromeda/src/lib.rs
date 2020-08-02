@@ -1,6 +1,6 @@
-mod hazel;
+mod andromeda;
 
-pub use hazel::{
+pub use andromeda::{
     Layer,
     Application,
     EventReturn,

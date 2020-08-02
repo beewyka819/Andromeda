@@ -1,5 +1,5 @@
 [package]
-name = "hazel_rs"
+name = "andromeda"
 version = "0.1.0"
 authors = ["Patrick Sullivan <psullivang7@gmail.com>"]
 edition = "2018"
