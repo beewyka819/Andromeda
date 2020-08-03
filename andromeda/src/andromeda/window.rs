@@ -30,13 +30,13 @@ impl Window {
         let event_loop = EventLoop::new();
         let window_handle = WindowBuilder::new()
             .with_title(title)
-            .with_inner_size(winit::dpi::PhysicalSize::new(width, height))
+            .with_inner_size(winit::dpi::LogicalSize::new(width, height))
             .build(&event_loop)?;
         let m_width = window_handle.current_monitor().size().width;
         let m_height = window_handle.current_monitor().size().height;
         let w_width = window_handle.outer_size().width;
         let w_height = window_handle.outer_size().height;
-        window_handle.set_outer_position(winit::dpi::PhysicalPosition::new((m_width - w_width) / 2, (m_height - w_height) / 2));
+        window_handle.set_outer_position(winit::dpi::LogicalPosition::new((m_width - w_width) / 2, (m_height - w_height) / 2));
         Ok((window_handle, event_loop))
     }
 

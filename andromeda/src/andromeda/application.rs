@@ -3,59 +3,43 @@ use super::{
     Layer,
     Event,
     EventReturn,
+    Window,
+    graphics::{WgpuState, Renderer},
 };
 
-pub trait Application {
-    fn new() -> Self;
-
-    fn init(&mut self, window: &mut super::Window) -> LayerQueue;
-}
-
-pub struct HazelApp<T> where T: Application {
-    app: T,
+pub struct HazelApp {
     layer_stack: LayerStack,
 }
 
-impl<T> HazelApp<T> where T: Application {
-    pub fn new(app: T) -> Self {
+impl HazelApp {
+    pub fn new() -> Self {
         Self {
-            app,
             layer_stack: LayerStack::new(),
         }
     }
 
-    pub fn init(&mut self, window: &mut super::Window) {
-        let queue = self.app.init(window);
-        if let Some(layers) = queue.layers {
-            for layer in layers {
-                self.push_layer(layer);
-            }
-        }
-        if let Some(overlays) = queue.overlays {
-            for overlay in overlays {
-                self.push_overlay(overlay);
-            }
-        }
-    }
-
-    pub fn handle_event(&self, event: &Event<()>, window: &mut super::Window) -> EventReturn {
+    pub fn handle_event(&mut self, event: &Event<()>, window: &mut super::Window) -> EventReturn {
         self.layer_stack.handle_event(event, window)
     }
 
-    pub fn update(&self) {
-        self.layer_stack.update();
+    pub fn update(&mut self, renderer: &mut Renderer, window: &Window, wgpu_state: &mut WgpuState) {
+        self.layer_stack.update(renderer, window, wgpu_state);
     }
 
-    pub fn push_layer(&mut self, layer: Box<dyn Layer>) -> usize {
+    pub fn push_layer(&mut self, layer: Box<dyn Layer>, window: &Window, wgpu_state: &mut WgpuState) -> usize {
+        let mut layer = layer;
+        layer.on_attach(window, wgpu_state);
         self.layer_stack.push_layer(layer)
     }
 
-    pub fn push_overlay(&mut self, overlay: Box<dyn Layer>) -> usize {
+    pub fn push_overlay(&mut self, overlay: Box<dyn Layer>, window: &Window, wgpu_state: &mut WgpuState) -> usize {
+        let mut overlay = overlay;
+        overlay.on_attach(window, wgpu_state);
         self.layer_stack.push_overlay(overlay)
     }
 }
 
-pub struct LayerQueue {
+pub struct ApplicationLayerStackDescriptor {
     pub layers: Option<Vec<Box<dyn Layer>>>,
     pub overlays: Option<Vec<Box<dyn Layer>>>,
 }

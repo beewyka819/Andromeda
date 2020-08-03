@@ -2,6 +2,8 @@ use super::{
     layer::Layer,
     Event,
     EventReturn,
+    Window,
+    graphics::{WgpuState, Renderer},
 };
 use log::debug;
 
@@ -76,9 +78,9 @@ impl LayerStack {
         None
     }
 
-    pub fn handle_event(&self, event: &Event<()>, window: &mut super::Window) -> EventReturn {
+    pub fn handle_event(&mut self, event: &Event<()>, window: &mut super::Window) -> EventReturn {
         let mut handled = EventReturn::Nothing;
-        for layer_id in self.layers.iter().rev() {
+        for layer_id in self.layers.iter_mut().rev() {
             handled = layer_id.layer.on_event(event, window);
             if handled != EventReturn::Nothing {
                 break;
@@ -87,9 +89,9 @@ impl LayerStack {
         handled
     }
 
-    pub fn update(&self) {
-        for layer_id in &self.layers {
-            layer_id.layer.on_update();
+    pub fn update(&mut self, renderer: &mut Renderer, window: &Window, wgpu_state: &mut WgpuState) {
+        for layer_id in &mut self.layers {
+            layer_id.layer.on_update(renderer, window, wgpu_state);
         }
     }
 }

@@ -2,10 +2,9 @@ mod andromeda;
 
 pub use andromeda::{
     Layer,
-    Application,
     EventReturn,
     Event,
-    LayerQueue,
+    ApplicationLayerStackDescriptor,
     Window,
     input::{
         InputEvent,
@@ -13,4 +12,6 @@ pub use andromeda::{
         VirtualKeyCode,
     },
     start_app,
+    debug::ImGuiLayer,
+    graphics,
 };
