@@ -4,7 +4,7 @@ use super::{
     Event,
     EventReturn,
     Window,
-    graphics::{WgpuState, Renderer},
+    graphics::Renderer,
 };
 
 pub struct HazelApp {
@@ -22,19 +22,19 @@ impl HazelApp {
         self.layer_stack.handle_event(event, window)
     }
 
-    pub fn update(&mut self, renderer: &mut Renderer, window: &Window, wgpu_state: &mut WgpuState) {
-        self.layer_stack.update(renderer, window, wgpu_state);
+    pub fn update(&mut self, renderer: &mut Renderer, window: &mut Window) {
+        self.layer_stack.update(renderer, window);
     }
 
-    pub fn push_layer(&mut self, layer: Box<dyn Layer>, window: &Window, wgpu_state: &mut WgpuState) -> usize {
+    pub fn push_layer(&mut self, layer: Box<dyn Layer>, window: &mut Window) -> usize {
         let mut layer = layer;
-        layer.on_attach(window, wgpu_state);
+        layer.on_attach(window);
         self.layer_stack.push_layer(layer)
     }
 
-    pub fn push_overlay(&mut self, overlay: Box<dyn Layer>, window: &Window, wgpu_state: &mut WgpuState) -> usize {
+    pub fn push_overlay(&mut self, overlay: Box<dyn Layer>, window: &mut Window) -> usize {
         let mut overlay = overlay;
-        overlay.on_attach(window, wgpu_state);
+        overlay.on_attach(window);
         self.layer_stack.push_overlay(overlay)
     }
 }

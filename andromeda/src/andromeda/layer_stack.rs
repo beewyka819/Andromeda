@@ -3,7 +3,7 @@ use super::{
     Event,
     EventReturn,
     Window,
-    graphics::{WgpuState, Renderer},
+    graphics::Renderer,
 };
 use log::debug;
 
@@ -89,9 +89,9 @@ impl LayerStack {
         handled
     }
 
-    pub fn update(&mut self, renderer: &mut Renderer, window: &Window, wgpu_state: &mut WgpuState) {
+    pub fn update(&mut self, renderer: &mut Renderer, window: &mut Window) {
         for layer_id in &mut self.layers {
-            layer_id.layer.on_update(renderer, window, wgpu_state);
+            layer_id.layer.on_update(renderer, window);
         }
     }
 }

@@ -3,11 +3,10 @@ use super::super::{
     Event,
     Window,
     EventReturn,
-    graphics::{WgpuState, Renderer},
+    graphics::Renderer,
 };
 use imgui::*;
-use imgui_winit_support::{HiDpiMode, WinitPlatform};
-use winit::event::VirtualKeyCode;
+use super::imgui_custom_winit_support::{HiDpiMode, WinitPlatform};
 use std::time::Instant;
 
 pub struct ImGuiLayer {
@@ -35,7 +34,7 @@ impl ImGuiLayer {
 }
 
 impl Layer for ImGuiLayer {
-    fn on_attach(&mut self, window: &Window, wgpu_state: &mut WgpuState) {
+    fn on_attach(&mut self, window: &mut Window) {
         self.imgui.style_mut().use_dark_colors();
 
         let io = self.imgui.io_mut();
@@ -43,6 +42,7 @@ impl Layer for ImGuiLayer {
         io.backend_flags |= imgui::BackendFlags::HAS_MOUSE_CURSORS;
         io.backend_flags |= imgui::BackendFlags::HAS_SET_MOUSE_POS;
 
+        /*
         io.key_map[imgui::Key::Tab as usize] = VirtualKeyCode::Tab as u32;
         io.key_map[imgui::Key::LeftArrow as usize] = VirtualKeyCode::Left as u32;
         io.key_map[imgui::Key::RightArrow as usize] = VirtualKeyCode::Right as u32;
@@ -64,6 +64,7 @@ impl Layer for ImGuiLayer {
         io.key_map[imgui::Key::X as usize] = VirtualKeyCode::X as u32;
         io.key_map[imgui::Key::Y as usize] = VirtualKeyCode::Y as u32;
         io.key_map[imgui::Key::Z as usize] = VirtualKeyCode::Z as u32;
+        */
 
         self.platform.attach_window(
             self.imgui.io_mut(),
@@ -94,6 +95,8 @@ impl Layer for ImGuiLayer {
             a: 1.0,
         };
 
+        let wgpu_state = window.wgpu_state_mut();
+
         #[cfg(not(feature = "glsl-to-spirv"))]
         let renderer = imgui_wgpu::Renderer::new(
             &mut self.imgui,
@@ -121,7 +124,7 @@ impl Layer for ImGuiLayer {
 
     }
 
-    fn on_update(&mut self, renderer: &mut Renderer, window: &Window, wgpu_state: &mut WgpuState) {
+    fn on_update(&mut self, renderer: &mut Renderer, window: &mut Window) {
         if let Some(frame) = renderer.frame().as_ref() {
             let imgui = &mut self.imgui;
             let io = imgui.io_mut();
@@ -138,7 +141,7 @@ impl Layer for ImGuiLayer {
             let mut show = true;
             ui.show_demo_window(&mut show);
 
-            let mut encoder = wgpu_state.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            let mut encoder = window.wgpu_state_mut().device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("ImGui Encoder"),
             });
 
@@ -151,7 +154,7 @@ impl Layer for ImGuiLayer {
             self.renderer
                 .as_mut()
                 .unwrap()
-                .render(ui.render(), &wgpu_state.device, &mut encoder, &frame.view)
+                .render(ui.render(), &window.wgpu_state_mut().device, &mut encoder, &frame.view)
                 .expect("ImGui rendering failed");
 
             renderer.add_command_buffer(encoder.finish());
@@ -160,7 +163,6 @@ impl Layer for ImGuiLayer {
     }
 
     fn on_event(&mut self, event: &Event<()>, window: &mut Window) -> EventReturn {
-        self.platform.handle_event(self.imgui.io_mut(), window.window_handle(), event);
-        EventReturn::Nothing
+        self.platform.handle_event(self.imgui.io_mut(), window.window_handle(), event)
     }
 }

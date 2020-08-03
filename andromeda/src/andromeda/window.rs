@@ -3,13 +3,15 @@ use winit::{
     event_loop::{EventLoop},
     window::{self, WindowBuilder},
 };
-use super::{EventReturn, input::InputHandler};
+use super::{EventReturn, input::InputHandler, graphics::WgpuState};
 use log::info;
 
 pub struct Window {
     title: String,
     event_loop: Option<EventLoop<()>>,
     window_handle: window::Window,
+    vsync: bool,
+    wgpu_state: WgpuState,
     input_handler: InputHandler,
 }
 
@@ -18,10 +20,15 @@ impl Window {
         info!("Creating window {}, ({}, {})", &title, width, height);
         let (window_handle, event_loop) = Self::init(&title, width, height)?;
 
+        use futures::executor::block_on;
+        let wgpu_state = block_on(WgpuState::new(&window_handle));
+
         Ok(Window {
             title,
             event_loop: Some(event_loop),
             window_handle,
+            vsync: true,
+            wgpu_state,
             input_handler: InputHandler::new(),
         })
     }
@@ -57,7 +64,7 @@ impl Window {
         &self.title
     }
 
-    pub fn event_loop(&mut self) -> Option<EventLoop<()>> {
+    pub fn event_loop_mut(&mut self) -> Option<EventLoop<()>> {
         self.event_loop.take()
     }
 
@@ -65,8 +72,21 @@ impl Window {
         &self.window_handle
     }
 
-    pub fn input_handler(&mut self) -> &mut InputHandler {
+    pub fn input_handler_mut(&mut self) -> &mut InputHandler {
         &mut self.input_handler
+    }
+
+    pub fn vsync(&self) -> bool {
+        self.vsync
+    }
+
+    pub fn set_vsync(&mut self, vsync: bool) {
+        self.vsync = vsync;
+        self.wgpu_state.set_vsync(vsync);
+    }
+
+    pub fn wgpu_state_mut(&mut self) -> &mut WgpuState {
+        &mut self.wgpu_state
     }
 }
 

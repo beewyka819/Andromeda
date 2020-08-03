@@ -1,7 +1,7 @@
 struct TestLayer {}
 
 impl andromeda::Layer for TestLayer {
-    fn on_attach(&mut self, window: &andromeda::Window, wgpu_state: &mut andromeda::graphics::WgpuState) {
+    fn on_attach(&mut self, window: &mut andromeda::Window) {
 
     }
 
@@ -15,7 +15,7 @@ impl andromeda::Layer for TestLayer {
                 ref event,
                 window_id,
             } if *window_id == window.window_handle().id() => {
-                if let Some(event) = window.input_handler().wrap_window_input(event) {
+                if let Some(event) = window.input_handler_mut().wrap_window_input(event) {
                     match event {
                         andromeda::InputEvent::KeyInput {
                             state,
@@ -28,7 +28,7 @@ impl andromeda::Layer for TestLayer {
                                         return andromeda::EventReturn::Terminate
                                     }
                                     andromeda::VirtualKeyCode::E if !repeat => {
-                                        println!("E");
+                                        window.set_vsync(!window.vsync());
                                         return andromeda::EventReturn::Handled
                                     }
                                     _ => return andromeda::EventReturn::Nothing
@@ -44,8 +44,8 @@ impl andromeda::Layer for TestLayer {
         }
     }
 
-    fn on_update(&mut self, renderer: &mut andromeda::graphics::Renderer, window: &andromeda::Window, wgpu_state: &mut andromeda::graphics::WgpuState) {
-        renderer.render(wgpu_state);
+    fn on_update(&mut self, renderer: &mut andromeda::graphics::Renderer, window: &mut andromeda::Window) {
+        renderer.render(window.wgpu_state_mut());
     }
 }
 
