@@ -48,7 +48,7 @@ impl Renderer {
         }
     }
 
-    pub fn add_command_buffer(&mut self, command_buffer: wgpu::CommandBuffer) {
+    pub fn push_command_buffer(&mut self, command_buffer: wgpu::CommandBuffer) {
         self.render_queue.push(command_buffer);
     }
 

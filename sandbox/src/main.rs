@@ -1,7 +1,7 @@
 struct TestLayer {}
 
 impl andromeda::Layer for TestLayer {
-    fn on_attach(&mut self, window: &mut andromeda::Window) {
+    fn on_attach(&mut self, _window: &mut andromeda::Window) {
 
     }
 
@@ -22,14 +22,10 @@ impl andromeda::Layer for TestLayer {
                             virtual_keycode: Some(keycode),
                             ..
                         } => {
-                            if let andromeda::KeyState::Pressed { repeat } = state {
+                            if let andromeda::ElementState::Pressed { .. } = state {
                                 match keycode {
                                     andromeda::VirtualKeyCode::Escape => {
                                         return andromeda::EventReturn::Terminate
-                                    }
-                                    andromeda::VirtualKeyCode::E if !repeat => {
-                                        window.set_vsync(!window.vsync());
-                                        return andromeda::EventReturn::Handled
                                     }
                                     _ => return andromeda::EventReturn::Nothing
                                 }

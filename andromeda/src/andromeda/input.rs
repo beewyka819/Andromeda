@@ -2,10 +2,10 @@ use winit::event::WindowEvent;
 pub use winit::{
     dpi::PhysicalPosition,
     event::{
+        self,
         ScanCode,
         VirtualKeyCode,
         ModifiersState,
-        ElementState,
         MouseButton,
         MouseScrollDelta,
         TouchPhase,
@@ -17,7 +17,7 @@ use std::collections::HashMap;
 pub enum InputEvent {
     KeyInput {
         scancode: ScanCode,
-        state: KeyState,
+        state: ElementState,
         virtual_keycode: Option<VirtualKeyCode>,
     },
     ModifiersChanged(ModifiersState),
@@ -39,68 +39,84 @@ pub enum InputEvent {
     Touch(Touch),
 }
 
-pub enum KeyState {
+pub enum ElementState {
     Pressed { repeat: bool },
     Released,
 }
 
 pub struct InputHandler {
     key_repeats: HashMap<ScanCode, bool>,
+    mouse_repeats: HashMap<MouseButton, bool>,
 }
 
 impl InputHandler {
     pub fn new() -> Self {
         Self {
             key_repeats: HashMap::new(),
+            mouse_repeats: HashMap::new(),
         }
     }
 
     pub fn wrap_window_input(&mut self, event: &WindowEvent) -> Option<InputEvent> {
-        match event {
+        match *event {
             WindowEvent::KeyboardInput {
                 input,
                 ..
             } => match input.state {
-                ElementState::Pressed => {
+                event::ElementState::Pressed => {
                     let mut repeat = false;
-                    if let Some(is_repeating) =  self.key_repeats.get(&input.scancode) {
+                    if let Some(is_repeating) = self.key_repeats.get(&input.scancode) {
                         repeat = *is_repeating;
                     }
                     self.key_repeats.insert(input.scancode, true);
                     Some(InputEvent::KeyInput {
                         scancode: input.scancode,
-                        state: KeyState::Pressed { repeat },
+                        state: ElementState::Pressed { repeat },
                         virtual_keycode: input.virtual_keycode,
                     })
                 },
-                ElementState::Released => {
+                event::ElementState::Released => {
                     self.key_repeats.insert(input.scancode, false);
                     Some(InputEvent::KeyInput {
                         scancode: input.scancode,
-                        state: KeyState::Released,
+                        state: ElementState::Released,
                         virtual_keycode: input.virtual_keycode,
                     })
                 },
             },
             WindowEvent::ModifiersChanged(modifiers_state) => {
-                Some(InputEvent::ModifiersChanged(*modifiers_state))
+                Some(InputEvent::ModifiersChanged(modifiers_state))
             },
             WindowEvent::MouseInput {
                 state,
                 button,
                 ..
-            } => {
-                Some(InputEvent::MouseInput {
-                    state: *state,
-                    button: *button,
-                })
+            } => match state {
+                event::ElementState::Pressed => {
+                    let mut repeat = false;
+                    if let Some(is_repeating) = self.mouse_repeats.get(&button) {
+                        repeat = *is_repeating;
+                    }
+                    self.mouse_repeats.insert(button, true);
+                    Some(InputEvent::MouseInput {
+                        state: ElementState::Pressed { repeat },
+                        button: button,
+                    })
+                },
+                event::ElementState::Released => {
+                    self.mouse_repeats.insert(button, false);
+                    Some(InputEvent::MouseInput {
+                        state: ElementState::Released,
+                        button: button,
+                    })
+                },
             },
             WindowEvent::CursorMoved {
                 position,
                 ..
             } => {
                 Some(InputEvent::CursorMoved {
-                    position: *position,
+                    position: position,
                 })
             },
             WindowEvent::MouseWheel {
@@ -109,8 +125,8 @@ impl InputHandler {
                 ..
             } => {
                 Some(InputEvent::MouseWheel {
-                    delta: *delta,
-                    phase: *phase,
+                    delta: delta,
+                    phase: phase,
                 })
             },
             WindowEvent::TouchpadPressure {
@@ -119,12 +135,12 @@ impl InputHandler {
                 ..
             } => {
                 Some(InputEvent::TouchpadPressure {
-                    pressure: *pressure,
-                    stage: *stage,
+                    pressure: pressure,
+                    stage: stage,
                 })
             },
             WindowEvent::Touch(touch) => {
-                Some(InputEvent::Touch(*touch))
+                Some(InputEvent::Touch(touch))
             },
             _ => None,
         }

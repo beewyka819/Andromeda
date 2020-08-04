@@ -1,3 +1,5 @@
+pub extern crate nalgebra_glm as glm;
+
 mod andromeda;
 
 pub use andromeda::{
@@ -8,7 +10,8 @@ pub use andromeda::{
     Window,
     input::{
         InputEvent,
-        KeyState,
+        ElementState,
+        MouseButton,
         VirtualKeyCode,
     },
     start_app,

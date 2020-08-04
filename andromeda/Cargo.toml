@@ -15,6 +15,7 @@ bytemuck = "1.2.0"
 image = "0.22"
 imgui = "0.4.0"
 imgui-winit-support = "0.4.0"
+nalgebra-glm = "0.7.0"
 
 [dependencies.imgui-wgpu]
 version = "0.7.0"

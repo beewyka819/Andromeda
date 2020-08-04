@@ -35,36 +35,30 @@ impl ImGuiLayer {
 
 impl Layer for ImGuiLayer {
     fn on_attach(&mut self, window: &mut Window) {
+        self.initialize(window);
+    }
+
+    fn on_detach(&mut self) {
+
+    }
+
+    fn on_update(&mut self, renderer: &mut Renderer, window: &mut Window) {
+        self.render(renderer, window);
+    }
+
+    fn on_event(&mut self, event: &Event<()>, window: &mut Window) -> EventReturn {
+        self.platform.handle_event(self.imgui.io_mut(), window.window_handle(), event)
+    }
+}
+
+impl ImGuiLayer {
+    fn initialize(&mut self, window: &mut Window) {
         self.imgui.style_mut().use_dark_colors();
 
         let io = self.imgui.io_mut();
 
         io.backend_flags |= imgui::BackendFlags::HAS_MOUSE_CURSORS;
         io.backend_flags |= imgui::BackendFlags::HAS_SET_MOUSE_POS;
-
-        /*
-        io.key_map[imgui::Key::Tab as usize] = VirtualKeyCode::Tab as u32;
-        io.key_map[imgui::Key::LeftArrow as usize] = VirtualKeyCode::Left as u32;
-        io.key_map[imgui::Key::RightArrow as usize] = VirtualKeyCode::Right as u32;
-        io.key_map[imgui::Key::UpArrow as usize] = VirtualKeyCode::Up as u32;
-        io.key_map[imgui::Key::DownArrow as usize] = VirtualKeyCode::Down as u32;
-        io.key_map[imgui::Key::PageUp as usize] = VirtualKeyCode::PageUp as u32;
-        io.key_map[imgui::Key::PageDown as usize] = VirtualKeyCode::PageDown as u32;
-        io.key_map[imgui::Key::Home as usize] = VirtualKeyCode::Home as u32;
-        io.key_map[imgui::Key::End as usize] = VirtualKeyCode::End as u32;
-        io.key_map[imgui::Key::Insert as usize] = VirtualKeyCode::Insert as u32;
-        io.key_map[imgui::Key::Delete as usize] = VirtualKeyCode::Delete as u32;
-        io.key_map[imgui::Key::Backspace as usize] = VirtualKeyCode::Back as u32;
-        io.key_map[imgui::Key::Space as usize] = VirtualKeyCode::Space as u32;
-        io.key_map[imgui::Key::Enter as usize] = VirtualKeyCode::Return as u32;
-        io.key_map[imgui::Key::Escape as usize] = VirtualKeyCode::Escape as u32;
-        io.key_map[imgui::Key::A as usize] = VirtualKeyCode::A as u32;
-        io.key_map[imgui::Key::C as usize] = VirtualKeyCode::C as u32;
-        io.key_map[imgui::Key::V as usize] = VirtualKeyCode::V as u32;
-        io.key_map[imgui::Key::X as usize] = VirtualKeyCode::X as u32;
-        io.key_map[imgui::Key::Y as usize] = VirtualKeyCode::Y as u32;
-        io.key_map[imgui::Key::Z as usize] = VirtualKeyCode::Z as u32;
-        */
 
         self.platform.attach_window(
             self.imgui.io_mut(),
@@ -117,14 +111,10 @@ impl Layer for ImGuiLayer {
 
         self.renderer = Some(renderer);
 
-        self.m_time = Some(Instant::now())
+        self.m_time = Some(Instant::now());
     }
 
-    fn on_detach(&mut self) {
-
-    }
-
-    fn on_update(&mut self, renderer: &mut Renderer, window: &mut Window) {
+    fn render(&mut self, renderer: &mut Renderer, window: &mut Window) {
         if let Some(frame) = renderer.frame().as_ref() {
             let imgui = &mut self.imgui;
             let io = imgui.io_mut();
@@ -157,12 +147,8 @@ impl Layer for ImGuiLayer {
                 .render(ui.render(), &window.wgpu_state_mut().device, &mut encoder, &frame.view)
                 .expect("ImGui rendering failed");
 
-            renderer.add_command_buffer(encoder.finish());
+            renderer.push_command_buffer(encoder.finish());
             // ---Finish Render---
         }
-    }
-
-    fn on_event(&mut self, event: &Event<()>, window: &mut Window) -> EventReturn {
-        self.platform.handle_event(self.imgui.io_mut(), window.window_handle(), event)
     }
 }

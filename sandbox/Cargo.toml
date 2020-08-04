@@ -8,4 +8,3 @@ edition = "2018"
 andromeda = { version = "0.1.0", path = "../andromeda" }
 log = "0.4.11"
 env_logger = "0.7.1"
-winit = "0.22.2"
