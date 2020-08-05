@@ -2,7 +2,7 @@ use winit::event::Event;
 use super::{
     EventReturn,
     Window,
-    graphics::Renderer,
+    renderer::Renderer,
 };
 
 pub trait Layer {

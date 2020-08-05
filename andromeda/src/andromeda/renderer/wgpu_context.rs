@@ -1,22 +1,23 @@
 use winit::window::Window;
 
-pub struct WgpuState {
-    pub surface: wgpu::Surface,
-    pub adapter: wgpu::Adapter,
+pub struct WgpuContext {
+    surface: wgpu::Surface,
+    adapter: wgpu::Adapter,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub sc_desc: wgpu::SwapChainDescriptor,
-    pub swap_chain: wgpu::SwapChain,
-    vsync: bool,
+    swap_chain: wgpu::SwapChain,
+    pub current_frame: Option<wgpu::SwapChainOutput>,
+    pub command_pool: Vec<wgpu::CommandBuffer>,
 
-    pub size: winit::dpi::PhysicalSize<u32>,
+    size: winit::dpi::PhysicalSize<u32>,
 }
 
-impl WgpuState {
+impl WgpuContext {
     pub async fn new(window_handle: &Window) -> Self {
         let size = window_handle.inner_size();
 
-        let (surface, adapter) = WgpuState::request_adapter(window_handle).await;
+        let (surface, adapter) = WgpuContext::request_adapter(window_handle).await;
 
         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
             extensions: wgpu::Extensions {
@@ -32,7 +33,9 @@ impl WgpuState {
             height: size.height,
             present_mode: wgpu::PresentMode::Fifo,
         };
-        let swap_chain = device.create_swap_chain(&surface, &sc_desc);
+        let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
+
+        let current_frame = swap_chain.get_next_texture().expect("Timeout getting frame");
 
         Self {
             surface,
@@ -41,10 +44,10 @@ impl WgpuState {
             queue,
             sc_desc,
             swap_chain,
+            current_frame: Some(current_frame),
+            command_pool: vec![],
 
             size,
-
-            vsync: true,
         }
     }
 
@@ -62,6 +65,13 @@ impl WgpuState {
         (surface, adapter)
     }
 
+    pub fn swap_buffers(&mut self) {
+        self.queue.submit(self.command_pool.as_slice());
+        self.command_pool.clear();
+        self.current_frame = None;
+        self.current_frame = Some(self.swap_chain.get_next_texture().expect("Timeout getting frame"));
+    }
+
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         self.size = new_size;
         self.sc_desc.width = new_size.width;
@@ -69,15 +79,7 @@ impl WgpuState {
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
     }
 
-    pub fn set_vsync(&mut self, vsync: bool) {
-        if self.vsync != vsync {
-            self.vsync = vsync;
-            if vsync {
-                self.sc_desc.present_mode = wgpu::PresentMode::Fifo;
-            } else {
-                self.sc_desc.present_mode = wgpu::PresentMode::Immediate;
-            }
-            self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
-        }
+    pub fn current_frame(&self) -> &wgpu::SwapChainOutput {
+        self.current_frame.as_ref().unwrap()
     }
 }

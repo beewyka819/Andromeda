@@ -3,7 +3,7 @@ use super::super::{
     Event,
     Window,
     EventReturn,
-    graphics::Renderer,
+    renderer::Renderer,
 };
 use imgui::*;
 use super::imgui_custom_winit_support::{HiDpiMode, WinitPlatform};
@@ -53,9 +53,12 @@ impl Layer for ImGuiLayer {
 
 impl ImGuiLayer {
     fn initialize(&mut self, window: &mut Window) {
-        self.imgui.style_mut().use_dark_colors();
+        self.imgui.style_mut().use_classic_colors();
 
         let io = self.imgui.io_mut();
+        
+        io.config_flags |= imgui::ConfigFlags::NAV_ENABLE_KEYBOARD;
+        //io.config_flags |= imgui::ConfigFlags::NAV_ENABLE_GAMEPAD;
 
         io.backend_flags |= imgui::BackendFlags::HAS_MOUSE_CURSORS;
         io.backend_flags |= imgui::BackendFlags::HAS_SET_MOUSE_POS;
@@ -89,23 +92,23 @@ impl ImGuiLayer {
             a: 1.0,
         };
 
-        let wgpu_state = window.wgpu_state_mut();
+        let context = window.context_mut();
 
         #[cfg(not(feature = "glsl-to-spirv"))]
         let renderer = imgui_wgpu::Renderer::new(
             &mut self.imgui,
-            &wgpu_state.device,
-            &mut wgpu_state.queue,
-            wgpu_state.sc_desc.format,
+            &context.device,
+            &mut context.queue,
+            context.sc_desc.format,
             Some(clear_color),
         );
 
         #[cfg(feature = "glsl-to-spirv")]
         let renderer = imgui_wgpu::Renderer::new_glsl(
             &mut self.imgui,
-            &wgpu_state.device,
-            &mut wgpu_state.queue,
-            wgpu_state.sc_desc.format,
+            &context.device,
+            &mut context.queue,
+            context.sc_desc.format,
             Some(clear_color),
         );
 
@@ -115,40 +118,40 @@ impl ImGuiLayer {
     }
 
     fn render(&mut self, renderer: &mut Renderer, window: &mut Window) {
-        if let Some(frame) = renderer.frame().as_ref() {
-            let imgui = &mut self.imgui;
-            let io = imgui.io_mut();
+        let imgui = &mut self.imgui;
+        let io = imgui.io_mut();
 
-            let win_size = window.window_handle().inner_size();
-            io.display_size = [win_size.width as f32, win_size.height as f32];
+        let win_size = window.window_handle().inner_size();
+        io.display_size = [win_size.width as f32, win_size.height as f32];
 
-            self.m_time = Some(io.update_delta_time(self.m_time.unwrap()));
+        self.m_time = Some(io.update_delta_time(self.m_time.unwrap()));
 
-            // ---Render ImGui---
-            self.platform.prepare_frame(io, window.window_handle()).expect("Failed to prepare frame");
-            let ui = imgui.frame();
+        // ---Render ImGui---
+        self.platform.prepare_frame(io, window.window_handle()).expect("Failed to prepare frame");
+        let ui = imgui.frame();
 
-            let mut show = true;
-            ui.show_demo_window(&mut show);
+        let mut show = true;
+        ui.show_demo_window(&mut show);
 
-            let mut encoder = window.wgpu_state_mut().device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("ImGui Encoder"),
-            });
+        let mut encoder = window.context_mut().device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("ImGui Encoder"),
+        });
 
-            if self.last_cursor != ui.mouse_cursor() {
-                self.last_cursor = ui.mouse_cursor();
-                self.platform.prepare_render(&ui, window.window_handle());
-            }
-
+        if self.last_cursor != ui.mouse_cursor() {
+            self.last_cursor = ui.mouse_cursor();
             self.platform.prepare_render(&ui, window.window_handle());
-            self.renderer
-                .as_mut()
-                .unwrap()
-                .render(ui.render(), &window.wgpu_state_mut().device, &mut encoder, &frame.view)
-                .expect("ImGui rendering failed");
-
-            renderer.push_command_buffer(encoder.finish());
-            // ---Finish Render---
         }
+
+        self.platform.prepare_render(&ui, window.window_handle());
+        
+        let context = window.context_mut();
+        self.renderer
+            .as_mut()
+            .unwrap()
+            .render(ui.render(), &context.device, &mut encoder, &context.current_frame().view)
+            .expect("ImGui rendering failed");
+
+        renderer.draw_elements(encoder.finish(), context);
+        // ---Finish Render---
     }
 }

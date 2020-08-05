@@ -4,7 +4,7 @@ use super::{
     Event,
     EventReturn,
     Window,
-    graphics::Renderer,
+    renderer::Renderer,
 };
 
 pub struct HazelApp {

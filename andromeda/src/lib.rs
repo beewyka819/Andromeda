@@ -16,5 +16,5 @@ pub use andromeda::{
     },
     start_app,
     debug::ImGuiLayer,
-    graphics,
+    renderer,
 };

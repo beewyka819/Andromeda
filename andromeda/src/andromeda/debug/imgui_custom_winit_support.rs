@@ -67,6 +67,7 @@ enum ActiveHiDpiMode {
 /// will use different logical coordinates, so be careful if you pass around logical size or
 /// position values.**
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum HiDpiMode {
     /// The DPI factor from winit is used directly without adjustment
     Default,

@@ -4,7 +4,7 @@ mod layer;
 mod layer_stack;
 pub mod debug;
 pub mod input;
-pub mod graphics;
+pub mod renderer;
 
 pub use application::*;
 pub use window::*;
@@ -23,7 +23,7 @@ pub fn start_app(layer_stack_descriptor: ApplicationLayerStackDescriptor, title:
 
     let mut app = HazelApp::new();
 
-    let mut renderer = graphics::Renderer::new();
+    let mut renderer = renderer::Renderer::new();
 
     let layers = layer_stack_descriptor.layers;
     if let Some(layers) = layers {
@@ -49,15 +49,14 @@ pub fn start_app(layer_stack_descriptor: ApplicationLayerStackDescriptor, title:
         query_event(&event, control_flow, &mut window, &mut app, &mut renderer);
     });
 }
-fn query_event(event: &Event<()>, control_flow: &mut ControlFlow, window: &mut Window, app: &mut HazelApp, renderer: &mut graphics::Renderer) {
+fn query_event(event: &Event<()>, control_flow: &mut ControlFlow, window: &mut Window, app: &mut HazelApp, renderer: &mut renderer::Renderer) {
     match event {
         Event::MainEventsCleared => {
             window.window_handle().request_redraw();
         },
         Event::RedrawRequested(_) => {
-            renderer.start_frame(window.wgpu_state_mut());
             app.update(renderer, window);
-            renderer.submit_renders(window.wgpu_state_mut());
+            window.swap_buffers();
         },
         _ => match window.handle_event(event) {
             EventReturn::Terminate => *control_flow = ControlFlow::Exit,

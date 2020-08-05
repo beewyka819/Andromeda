@@ -3,7 +3,7 @@ use super::{
     Event,
     EventReturn,
     Window,
-    graphics::Renderer,
+    renderer::Renderer,
 };
 use log::debug;
 

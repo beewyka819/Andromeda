@@ -40,8 +40,8 @@ impl andromeda::Layer for TestLayer {
         }
     }
 
-    fn on_update(&mut self, renderer: &mut andromeda::graphics::Renderer, window: &mut andromeda::Window) {
-        renderer.render(window.wgpu_state_mut());
+    fn on_update(&mut self, renderer: &mut andromeda::renderer::Renderer, window: &mut andromeda::Window) {
+        renderer.render(window.context_mut());
     }
 }
 

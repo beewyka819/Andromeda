@@ -3,7 +3,7 @@ use winit::{
     event_loop::{EventLoop},
     window::{self, WindowBuilder},
 };
-use super::{EventReturn, input::InputHandler, graphics::WgpuState};
+use super::{EventReturn, input::InputHandler, renderer::WgpuContext};
 use log::info;
 
 pub struct Window {
@@ -11,7 +11,7 @@ pub struct Window {
     event_loop: Option<EventLoop<()>>,
     window_handle: window::Window,
     vsync: bool,
-    wgpu_state: WgpuState,
+    context: WgpuContext,
     input_handler: InputHandler,
 }
 
@@ -21,14 +21,14 @@ impl Window {
         let (window_handle, event_loop) = Self::init(&title, width, height)?;
 
         use futures::executor::block_on;
-        let wgpu_state = block_on(WgpuState::new(&window_handle));
+        let context = block_on(WgpuContext::new(&window_handle));
 
         Ok(Window {
             title,
             event_loop: Some(event_loop),
             window_handle,
             vsync: true,
-            wgpu_state,
+            context,
             input_handler: InputHandler::new(),
         })
     }
@@ -82,11 +82,15 @@ impl Window {
 
     pub fn set_vsync(&mut self, vsync: bool) {
         self.vsync = vsync;
-        self.wgpu_state.set_vsync(vsync);
+        //self.context.set_vsync(vsync);
     }
 
-    pub fn wgpu_state_mut(&mut self) -> &mut WgpuState {
-        &mut self.wgpu_state
+    pub fn context_mut(&mut self) -> &mut WgpuContext {
+        &mut self.context
+    }
+
+    pub fn swap_buffers(&mut self) {
+        self.context.swap_buffers();
     }
 }
 
