@@ -1,8 +1,7 @@
 use super::{
     layer::Layer,
     Event,
-    EventReturn,
-    Window,
+    EventHandleStatus,
     graphics::Renderer,
 };
 use log::debug;
@@ -25,8 +24,8 @@ pub struct LayerStack {
 }
 
 impl LayerStack {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> LayerStack {
+        LayerStack {
             layers: Vec::new(),
             layer_insert: 0,
             id_counter: 0,
@@ -34,64 +33,99 @@ impl LayerStack {
     }
 
     pub fn push_layer(&mut self, layer: Box<dyn Layer>) -> usize {
+        let id = self.id_counter;
         let layer_id = LayerID {
             layer,
-            id: self.id_counter,
+            id,
         };
         self.id_counter += 1;
         debug!("pushed layer {}", layer_id.id);
         self.layers.insert(self.layer_insert, layer_id);
         self.layer_insert += 1;
-        
-        self.layers.get(self.layer_insert - 1).unwrap().id
+
+        id
     }
 
     pub fn push_overlay(&mut self, overlay: Box<dyn Layer>) -> usize {
+        let id = self.id_counter;
         let overlay_id = LayerID {
             layer: overlay,
-            id: self.id_counter,
+            id,
         };
         self.id_counter += 1;
         debug!("pushed overlay {}", overlay_id.id);
         self.layers.push(overlay_id);
-        self.layers.get(self.layers.len() - 1).unwrap().id
+
+        id
     }
 
+    #[allow(dead_code)]
     pub fn pop_layer(&mut self, layer_id: usize) -> Option<Box<dyn Layer>> {
         let pos = self.layers.iter().take(self.layer_insert).position(|x| x.id == layer_id);
         if let Some(index) = pos {
-            let elem = self.layers.remove(index);
+            let mut elem = self.layers.remove(index);
             self.layer_insert -= 1;
-            debug!("popped layer {} at index: {}", elem, index);
-            return Some(elem.layer)
-        }
-        None
-    }
-
-    pub fn pop_overlay(&mut self, overlay_id: usize) -> Option<Box<dyn Layer>> {
-        let pos = self.layers.iter().position(|x| x.id == overlay_id);
-        if let Some(index) = pos {
-            let elem = self.layers.remove(index);
+            elem.layer.on_detach();
             debug!("popped overlay {} at index: {}", elem, index);
             return Some(elem.layer)
         }
         None
     }
 
-    pub fn handle_event(&mut self, event: &Event<()>, window: &mut super::Window) -> EventReturn {
-        let mut handled = EventReturn::Nothing;
+    #[allow(dead_code)]
+    pub fn pop_overlay(&mut self, overlay_id: usize) -> Option<Box<dyn Layer>> {
+        let pos = self.layers.iter().skip(self.layer_insert).position(|x| x.id == overlay_id);
+        if let Some(index) = pos {
+            let mut elem = self.layers.remove(index);
+            elem.layer.on_detach();
+            debug!("popped overlay {} at index: {}", elem, index);
+            return Some(elem.layer)
+        }
+        None
+    }
+
+    pub fn handle_event(&mut self, event: &Event<()>, window: &mut super::Window) -> EventHandleStatus {
+        let mut handled = EventHandleStatus::Unhandled;
         for layer_id in self.layers.iter_mut().rev() {
             handled = layer_id.layer.on_event(event, window);
-            if handled != EventReturn::Nothing {
+            if handled != EventHandleStatus::Unhandled {
                 break;
             }
         }
         handled
     }
 
-    pub fn update(&mut self, renderer: &mut Renderer, window: &mut Window) {
-        for layer_id in &mut self.layers {
-            layer_id.layer.on_update(renderer, window);
-        }
+    pub fn update(&mut self, window: &mut super::Window, renderer: &mut Renderer) {
+        self.layers
+            .iter_mut()
+            .for_each(|layer_id| {
+                layer_id.layer.on_update(window, renderer);
+        });
     }
+}
+
+impl Drop for LayerStack {
+    fn drop(&mut self) {
+        self.layers
+            .iter_mut()
+            .take(self.layer_insert)
+            .for_each(|layer_id| {
+                layer_id.layer.on_detach();
+                debug!("popped layer {}", layer_id);
+            });
+        
+        self.layers
+            .iter_mut()
+            .skip(self.layer_insert)
+            .for_each(|overlay_id| {
+                overlay_id.layer.on_detach();
+                debug!("popped overlay {}", overlay_id);
+            });
+    }
+}
+
+#[allow(dead_code)]
+pub struct LayerStackDescriptor {
+    pub layers: Option<Vec<Box<dyn Layer>>>,
+    pub overlays: Option<Vec<Box<dyn Layer>>>,
 }
