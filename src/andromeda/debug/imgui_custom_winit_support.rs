@@ -9,7 +9,7 @@ use winit::{
     },
     window::{CursorIcon as MouseCursor, Window},
 };
-use super::super::EventReturn;
+use super::super::EventHandleStatus;
 
 /// winit backend platform state
 #[derive(Debug)]
@@ -212,7 +212,7 @@ impl WinitPlatform {
     /// * window size / dpi factor changes are applied
     /// * keyboard state is updated
     /// * mouse state is updated
-    pub fn handle_event<T>(&mut self, io: &mut Io, window: &Window, event: &Event<T>) -> EventReturn {
+    pub fn handle_event<T>(&mut self, io: &mut Io, window: &Window, event: &Event<T>) -> EventHandleStatus {
         match *event {
             Event::WindowEvent {
                 window_id,
@@ -226,7 +226,7 @@ impl WinitPlatform {
                     io.key_ctrl = modifiers.ctrl();
                     io.key_alt = modifiers.alt();
                     io.key_super = modifiers.logo();
-                    return EventReturn::Handled;
+                    return EventHandleStatus::Handled;
                 }
 
                 self.handle_window_event(io, window, event)
@@ -243,24 +243,24 @@ impl WinitPlatform {
                 ..
             } => {
                 io.keys_down[key as usize] = false;
-                EventReturn::Handled
+                EventHandleStatus::Handled
             }
-            _ => EventReturn::Nothing,
+            _ => EventHandleStatus::Unhandled,
         }
     }
-    fn handle_window_event(&mut self, io: &mut Io, window: &Window, event: &WindowEvent) -> EventReturn {
+    fn handle_window_event(&mut self, io: &mut Io, window: &Window, event: &WindowEvent) -> EventHandleStatus {
         match *event {
             WindowEvent::Resized(physical_size) => {
                 let logical_size = physical_size.to_logical(window.scale_factor());
                 let logical_size = self.scale_size_from_winit(window, logical_size);
                 io.display_size = [logical_size.width as f32, logical_size.height as f32];
-                EventReturn::Nothing
+                EventHandleStatus::Unhandled
             }
             WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 let hidpi_factor = match self.hidpi_mode {
                     ActiveHiDpiMode::Default => scale_factor,
                     ActiveHiDpiMode::Rounded => scale_factor.round(),
-                    _ => return EventReturn::Nothing,
+                    _ => return EventHandleStatus::Unhandled,
                 };
                 // Mouse position needs to be changed while we still have both the old and the new
                 // values
@@ -276,7 +276,7 @@ impl WinitPlatform {
                 let logical_size = window.inner_size().to_logical(scale_factor);
                 let logical_size = self.scale_size_from_winit(window, logical_size);
                 io.display_size = [logical_size.width as f32, logical_size.height as f32];
-                EventReturn::Nothing
+                EventHandleStatus::Unhandled
             }
             WindowEvent::KeyboardInput {
                 input:
@@ -297,21 +297,21 @@ impl WinitPlatform {
                 match key {
                     VirtualKeyCode::LShift | VirtualKeyCode::RShift => {
                         io.key_shift = pressed;
-                        return EventReturn::Handled;
+                        return EventHandleStatus::Handled;
                     },
                     VirtualKeyCode::LControl | VirtualKeyCode::RControl => {
                         io.key_ctrl = pressed;
-                        return EventReturn::Handled;
+                        return EventHandleStatus::Handled;
                     },
                     VirtualKeyCode::LAlt | VirtualKeyCode::RAlt => {
                         io.key_alt = pressed;
-                        return EventReturn::Handled;
+                        return EventHandleStatus::Handled;
                     },
                     VirtualKeyCode::LWin | VirtualKeyCode::RWin => {
                         io.key_super = pressed;
-                        return EventReturn::Handled;
+                        return EventHandleStatus::Handled;
                     },
-                    _ => EventReturn::Nothing,
+                    _ => EventHandleStatus::Unhandled,
                 }
             }
             WindowEvent::ReceivedCharacter(ch) => {
@@ -319,15 +319,15 @@ impl WinitPlatform {
                 // delete it.
                 if ch != '\u{7f}' {
                     io.add_input_character(ch);
-                    return EventReturn::Handled;
+                    return EventHandleStatus::Handled;
                 }
-                EventReturn::Nothing
+                EventHandleStatus::Unhandled
             }
             WindowEvent::CursorMoved { position, .. } => {
                 let position = position.to_logical(window.scale_factor());
                 let position = self.scale_pos_from_winit(window, position);
                 io.mouse_pos = [position.x as f32, position.y as f32];
-                EventReturn::Handled
+                EventHandleStatus::Handled
             }
             WindowEvent::MouseWheel {
                 delta,
@@ -337,29 +337,29 @@ impl WinitPlatform {
                 MouseScrollDelta::LineDelta(h, v) => {
                     io.mouse_wheel_h = h;
                     io.mouse_wheel = v;
-                    EventReturn::Handled
+                    EventHandleStatus::Handled
                 }
                 MouseScrollDelta::PixelDelta(pos) => {
-                    let mut handled = EventReturn::Nothing;
+                    let mut handled = EventHandleStatus::Unhandled;
                     match pos.x.partial_cmp(&0.0) {
                         Some(Ordering::Greater) => {
                             io.mouse_wheel_h += 1.0;
-                            handled = EventReturn::Handled;
+                            handled = EventHandleStatus::Handled;
                         },
                         Some(Ordering::Less) => {
                             io.mouse_wheel_h -= 1.0;
-                            handled = EventReturn::Handled;
+                            handled = EventHandleStatus::Handled;
                         },
                         _ => (),
                     }
                     match pos.y.partial_cmp(&0.0) {
                         Some(Ordering::Greater) => {
                             io.mouse_wheel += 1.0;
-                            handled = EventReturn::Handled;
+                            handled = EventHandleStatus::Handled;
                         },
                         Some(Ordering::Less) => {
                             io.mouse_wheel -= 1.0;
-                            handled = EventReturn::Handled;
+                            handled = EventHandleStatus::Handled;
                         },
                         _ => (),
                     }
@@ -371,24 +371,24 @@ impl WinitPlatform {
                 match button {
                     MouseButton::Left => {
                         io.mouse_down[0] = pressed;
-                        return EventReturn::Handled;
+                        return EventHandleStatus::Handled;
                     },
                     MouseButton::Right => {
                         io.mouse_down[1] = pressed;
-                        return EventReturn::Handled;
+                        return EventHandleStatus::Handled;
                     },
                     MouseButton::Middle => {
                         io.mouse_down[2] = pressed;
-                        return EventReturn::Handled;
+                        return EventHandleStatus::Handled;
                     },
                     MouseButton::Other(idx @ 0..=4) => {
                         io.mouse_down[idx as usize] = pressed;
-                        return EventReturn::Handled;
+                        return EventHandleStatus::Handled;
                     },
-                    _ => EventReturn::Nothing,
+                    _ => EventHandleStatus::Unhandled,
                 }
             }
-            _ => EventReturn::Nothing,
+            _ => EventHandleStatus::Unhandled,
         }
     }
     /// Frame preparation callback.

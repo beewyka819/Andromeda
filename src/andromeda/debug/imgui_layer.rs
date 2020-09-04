@@ -2,61 +2,41 @@ use super::super::{
     Layer,
     Event,
     Window,
-    EventReturn,
-    renderer::Renderer,
+    EventHandleStatus,
+    graphics::Renderer,
 };
 use imgui::*;
 use super::imgui_custom_winit_support::{HiDpiMode, WinitPlatform};
-use std::time::Instant;
+//use std::time::Instant;
 
 pub struct ImGuiLayer {
     imgui: Context,
     platform: WinitPlatform,
     renderer: Option<imgui_wgpu::Renderer>,
-    m_time: Option<Instant>,
+    //m_time: Option<Instant>,
     last_cursor: Option<MouseCursor>,
 }
 
 impl ImGuiLayer {
-    pub fn new() -> Self {
+    pub fn new() -> ImGuiLayer {
         let mut imgui = Context::create();
 
         let platform = WinitPlatform::init(&mut imgui);
 
-        Self {
+        ImGuiLayer {
             imgui,
             platform,
             renderer: None,
-            m_time: None,
+            //m_time: None,
             last_cursor: None,
         }
     }
-}
 
-impl Layer for ImGuiLayer {
-    fn on_attach(&mut self, window: &mut Window) {
-        self.initialize(window);
-    }
-
-    fn on_detach(&mut self) {
-
-    }
-
-    fn on_update(&mut self, renderer: &mut Renderer, window: &mut Window) {
-        self.render(renderer, window);
-    }
-
-    fn on_event(&mut self, event: &Event<()>, window: &mut Window) -> EventReturn {
-        self.platform.handle_event(self.imgui.io_mut(), window.window_handle(), event)
-    }
-}
-
-impl ImGuiLayer {
     fn initialize(&mut self, window: &mut Window) {
         self.imgui.style_mut().use_classic_colors();
 
         let io = self.imgui.io_mut();
-        
+
         io.config_flags |= imgui::ConfigFlags::NAV_ENABLE_KEYBOARD;
         //io.config_flags |= imgui::ConfigFlags::NAV_ENABLE_GAMEPAD;
 
@@ -85,73 +65,86 @@ impl ImGuiLayer {
             },
         ]);
 
-        let clear_color = wgpu::Color {
-            r: 0.1,
-            g: 0.2,
-            b: 0.3,
-            a: 1.0,
-        };
-
         let context = window.context_mut();
 
-        #[cfg(not(feature = "glsl-to-spirv"))]
         let renderer = imgui_wgpu::Renderer::new(
             &mut self.imgui,
-            &context.device,
-            &mut context.queue,
-            context.sc_desc.format,
-            Some(clear_color),
-        );
-
-        #[cfg(feature = "glsl-to-spirv")]
-        let renderer = imgui_wgpu::Renderer::new_glsl(
-            &mut self.imgui,
-            &context.device,
-            &mut context.queue,
-            context.sc_desc.format,
-            Some(clear_color),
+            context.device(),
+            context.queue(),
+            context.sc_desc().format,
         );
 
         self.renderer = Some(renderer);
 
-        self.m_time = Some(Instant::now());
+        //self.m_time = Some(Instant::now());
     }
 
-    fn render(&mut self, renderer: &mut Renderer, window: &mut Window) {
+    fn render(&mut self, window: &mut Window) {
         let imgui = &mut self.imgui;
         let io = imgui.io_mut();
 
         let win_size = window.window_handle().inner_size();
         io.display_size = [win_size.width as f32, win_size.height as f32];
 
-        self.m_time = Some(io.update_delta_time(self.m_time.unwrap()));
+        //self.m_time = Some(io.update_delta_time(self.m_time.unwrap()));
 
-        // ---Render ImGui---
         self.platform.prepare_frame(io, window.window_handle()).expect("Failed to prepare frame");
         let ui = imgui.frame();
 
         let mut show = true;
         ui.show_demo_window(&mut show);
 
-        let mut encoder = window.context_mut().device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("ImGui Encoder"),
-        });
-
         if self.last_cursor != ui.mouse_cursor() {
             self.last_cursor = ui.mouse_cursor();
             self.platform.prepare_render(&ui, window.window_handle());
         }
-
-        self.platform.prepare_render(&ui, window.window_handle());
         
         let context = window.context_mut();
+
+        let mut encoder = context.device().create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("ImGui Encoder"),
+        });
+
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            color_attachments: &[
+                wgpu::RenderPassColorAttachmentDescriptor {
+                    attachment: &context.current_frame().view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: true,
+                    },
+                }
+            ],
+            depth_stencil_attachment: None,
+        });
+
         self.renderer
             .as_mut()
             .unwrap()
-            .render(ui.render(), &context.device, &mut encoder, &context.current_frame().view)
+            .render(ui.render(), context.queue(), context.device(), &mut render_pass)
             .expect("ImGui rendering failed");
+        
+        drop(render_pass);
 
-        renderer.draw_elements(encoder.finish(), context);
-        // ---Finish Render---
+        context.submit_command(encoder.finish());
+    }
+}
+
+impl Layer for ImGuiLayer {
+    fn on_attach(&mut self, window: &mut Window) {
+        self.initialize(window);
+    }
+
+    fn on_detach(&mut self) {
+        
+    }
+
+    fn on_update(&mut self, window: &mut Window, _renderer: &mut Renderer) {
+        self.render(window);
+    }
+
+    fn on_event(&mut self, event: &Event<()>, window: &mut Window) -> EventHandleStatus {
+        self.platform.handle_event(self.imgui.io_mut(), window.window_handle(), event)
     }
 }

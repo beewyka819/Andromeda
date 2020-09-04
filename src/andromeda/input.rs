@@ -39,6 +39,7 @@ pub enum InputEvent {
     Touch(Touch),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ElementState {
     Pressed { repeat: bool },
     Released,
@@ -50,8 +51,8 @@ pub struct InputHandler {
 }
 
 impl InputHandler {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> InputHandler {
+        InputHandler {
             key_repeats: HashMap::new(),
             mouse_repeats: HashMap::new(),
         }
@@ -82,7 +83,7 @@ impl InputHandler {
                         state: ElementState::Released,
                         virtual_keycode: input.virtual_keycode,
                     })
-                },
+                }
             },
             WindowEvent::ModifiersChanged(modifiers_state) => {
                 Some(InputEvent::ModifiersChanged(modifiers_state))
@@ -100,14 +101,14 @@ impl InputHandler {
                     self.mouse_repeats.insert(button, true);
                     Some(InputEvent::MouseInput {
                         state: ElementState::Pressed { repeat },
-                        button: button,
+                        button,
                     })
                 },
                 event::ElementState::Released => {
                     self.mouse_repeats.insert(button, false);
                     Some(InputEvent::MouseInput {
                         state: ElementState::Released,
-                        button: button,
+                        button,
                     })
                 },
             },
@@ -116,7 +117,7 @@ impl InputHandler {
                 ..
             } => {
                 Some(InputEvent::CursorMoved {
-                    position: position,
+                    position
                 })
             },
             WindowEvent::MouseWheel {
@@ -125,8 +126,8 @@ impl InputHandler {
                 ..
             } => {
                 Some(InputEvent::MouseWheel {
-                    delta: delta,
-                    phase: phase,
+                    delta,
+                    phase,
                 })
             },
             WindowEvent::TouchpadPressure {
@@ -135,17 +136,14 @@ impl InputHandler {
                 ..
             } => {
                 Some(InputEvent::TouchpadPressure {
-                    pressure: pressure,
-                    stage: stage,
+                    pressure,
+                    stage,
                 })
             },
             WindowEvent::Touch(touch) => {
                 Some(InputEvent::Touch(touch))
             },
-            _ => None,
+            _ => None
         }
     }
 }
-
-
-

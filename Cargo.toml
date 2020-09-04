@@ -1,5 +1,29 @@
-[workspace]
-members = [
-    "andromeda",
-    "sandbox",
-]
+[package]
+name = "andromeda"
+version = "0.1.0"
+authors = ["Patrick Sullivan <psullivang7@gmail.com>"]
+edition = "2018"
+
+[lib]
+
+[dependencies]
+log = "0.4.11"
+winit = { version = "0.22.2", features = ["web-sys"] }
+failure = "0.1.8"
+wgpu = "0.6"
+futures = "0.3.4"
+shaderc = "0.6"
+bytemuck = "1.2"
+image = "0.22"
+imgui = "0.4"
+imgui-winit-support = "0.4"
+imgui-wgpu = "0.9"
+nalgebra-glm = "0.7"
+
+[dev-dependencies]
+pretty_env_logger = "0.4.0"
+
+[[example]]
+name="hello-wgpu"
+path="examples/hello-wgpu/main.rs"
+test = true

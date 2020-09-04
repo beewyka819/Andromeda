@@ -1,5 +1,5 @@
 mod wgpu_context;
-mod renderer;
+pub mod renderer;
 
 pub use wgpu_context::WgpuContext;
-pub use renderer::*;
+pub use renderer::Renderer;
