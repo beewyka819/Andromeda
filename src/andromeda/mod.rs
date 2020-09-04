@@ -52,12 +52,14 @@ fn handle_event(event: &Event<()>, control_flow: &mut ControlFlow, window: &mut 
             window.window_handle().request_redraw();
         },
         Event::RedrawRequested(_) => {
+            window.context_mut().start_frame();
+
             let mut renderer = Renderer {};
 
             app.update(window, &mut renderer);
 
             //renderer.render(window.context_mut());
-            window.context_mut().swap_buffers();
+            window.context_mut().draw_frame();
         },
         _ => match window.handle_event(event) {
             EventHandleStatus::Terminate => *control_flow = ControlFlow::Exit,

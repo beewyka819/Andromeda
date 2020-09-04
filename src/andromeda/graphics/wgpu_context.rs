@@ -1,3 +1,5 @@
+use log::trace;
+
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct WgpuContext {
@@ -20,18 +22,13 @@ impl WgpuContext {
     pub async fn new(window_handle: &winit::window::Window) -> WgpuContext {
         let size = window_handle.inner_size();
 
-        let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
+        let instance = wgpu::Instance::new(wgpu::BackendBit::VULKAN);
 
         let (surface, adapter) = WgpuContext::request_adapter(&instance, &window_handle).await;
         
         let (device, queue) = WgpuContext::request_device(&adapter).await;
 
-        let (sc_desc, mut swap_chain) = WgpuContext::create_swap_chain(&size, &device, &surface);
-
-        let current_frame = swap_chain
-            .get_current_frame()
-            .expect("timeout getting frame")
-            .output;
+        let (sc_desc, swap_chain) = WgpuContext::create_swap_chain(&size, &device, &surface);
 
         WgpuContext {
             instance,
@@ -43,7 +40,7 @@ impl WgpuContext {
             sc_desc,
             swap_chain,
 
-            current_frame: Some(current_frame),
+            current_frame: None,
             command_pool: vec![],
 
             size,
@@ -91,24 +88,33 @@ impl WgpuContext {
         (sc_desc, swap_chain)
     }
 
-    pub fn swap_buffers(&mut self) {
+    pub fn start_frame(&mut self) {
+        trace!("Retrieving next frame");
+        self.current_frame = Some(self.swap_chain.get_current_frame().expect("timeout getting frame").output);
+        trace!("Frame retrieved successfully!");
+    }
+
+    pub fn draw_frame(&mut self) {
+        trace!("Submitting command buffers to queue");
         let mut submittal_pool = Vec::new();
         std::mem::swap(&mut submittal_pool, &mut self.command_pool);
         
         self.queue.submit(submittal_pool);
         
+        trace!("Drawing frame");
         self.current_frame = None;
-        self.current_frame = Some(self.swap_chain.get_current_frame().expect("timeout getting frame").output);
+        trace!("Frame drawn successfully!");
     }
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+        trace!("Resizing swapchain");
         self.size = new_size;
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
 
-        self.current_frame = None;
+        trace!("Recreate swapchain");
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
-        self.current_frame = Some(self.swap_chain.get_current_frame().expect("timeout getting frame").output);
+        trace!("Swapchain recreated successfully!");
     }
 
     pub fn current_frame(&self) -> &wgpu::SwapChainTexture {

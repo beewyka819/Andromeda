@@ -9,7 +9,7 @@ use andromeda::{
 struct TestLayer;
 
 impl Layer for TestLayer {
-    fn on_attach(&mut self, window: &mut Window) {
+    fn on_attach(&mut self, _window: &mut Window) {
         
     }
 
@@ -54,7 +54,7 @@ impl Layer for TestLayer {
 }
 
 fn main() {
-    std::env::set_var("RUST_LOG", "andromeda=debug");
+    std::env::set_var("RUST_LOG", "andromeda=debug,gfx_memory=error");
     pretty_env_logger::init_timed();
 
     let test_layer = TestLayer {};
