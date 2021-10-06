@@ -3,27 +3,21 @@ name = "andromeda"
 version = "0.1.0"
 authors = ["Patrick Sullivan <psullivang7@gmail.com>"]
 edition = "2018"
-
-[lib]
+license = "MIT OR Apache-2.0"
+keywords = ["game", "engine", "gamedev", "graphics", "hazel"]
+categories = ["game-engines", "graphics", "rendering"]
+readme = "README.md"
 
 [dependencies]
-log = "0.4.11"
-winit = { version = "0.22.2", features = ["web-sys"] }
-failure = "0.1.8"
-wgpu = "0.6"
-futures = "0.3.4"
-shaderc = "0.6"
-bytemuck = "1.2"
-image = "0.22"
-imgui = "0.4"
-imgui-winit-support = "0.4"
-imgui-wgpu = "0.9"
-nalgebra-glm = "0.7"
-
-[dev-dependencies]
-pretty_env_logger = "0.4.0"
+anyhow = "1.0.41"
+slog = { version = "2.7.0", features = ["max_level_trace", "release_max_level_warn"] }
+slog-async = "2.6.0"
+slog-term = "2.8.0"
+lazy_static = "1.4.0"
+glam = "0.17.1"
+winit = "0.25.0"
 
 [[example]]
-name="hello-wgpu"
-path="examples/hello-wgpu/main.rs"
+name = "sandbox"
+path = "examples/sandbox/main.rs"
 test = true
