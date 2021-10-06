@@ -1,4 +1,4 @@
-# andromeda [![Build Status](https://travis-ci.com/beewyka819/hazel-rs.svg?token=zeFwW3ac1QdfcejnXzxJ&branch=main)](https://travis-ci.com/beewyka819/hazel-rs)
+# andromeda [![Build Status](https://app.travis-ci.com/beewyka819/Andromeda.svg?branch=master)](https://app.travis-ci.com/github/beewyka819/Andromeda)
 Interactive application and rendering engine written in Rust.
 
 Partially inspired by the [Hazel Engine](https://github.com/TheCherno/Hazel)
